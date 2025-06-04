@@ -153,44 +153,70 @@ namespace CashCommodities.Controls {
             }
         }
 
-        internal void OnTextChanged(object sender, EventArgs e) {
+        internal void OnTextChanged(object sender, EventArgs e)
+        {
             // synchronize the text in the TextBox with the DataGridView
             GridView.SuspendLayout();
             var lines = TextBox.Lines;
-            for (var i = 0; i < lines.Length; i++) {
+
+            // cache the removed items so that they can repopulate with existing data if re-entered.
+            var existingItems = new Dictionary<int, CashItem>();
+            foreach (var item in RemoveQueue)
+            {
+                existingItems[item.ItemId] = item;
+            }
+            RemoveQueue.Clear();
+
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string line = lines[i].Trim();
+                if (string.IsNullOrEmpty(line))
+                    continue;
+
                 CashItem item;
 
-                // synchronize existing rows with the text in the TextBox
-                if (i < GridView.RowCount) {
+                // synchronize existing rows wiith text in the TextBox
+                if (i < GridView.RowCount)
+                {
                     item = GridView.Rows[i].Tag as CashItem;
 
-                    if (!string.IsNullOrEmpty(lines[i])) {
-                        // if the row exists, synchronize the text
-                        item.SetValue("ItemID", lines[i]);
-                        GridView.Rows[i].Cells[2].Value = lines[i];
+                    if (item != null)
+                    {
+                        item.SetValue("ItemID", line);
+                        GridView.Rows[i].Cells[2].Value = line;
                         continue;
                     }
-
-                    // itemId is also empty which assumes the row has already been added, skip
-                    if (string.IsNullOrEmpty(GridView.Rows[i].Cells[2].Value.ToString())) continue;
                 }
 
-                // new rows
-                item = new CashItem((++MainWindow.LastNodeValue).ToString());
+                // try to reuse an existing item in cache
+                if (int.TryParse(line, out int parsedId) && existingItems.TryGetValue(parsedId, out item))
+                {
+                    existingItems.Remove(parsedId); // we don't need to use it again.
+                }
+                else
+                {
+                    item = new CashItem((++MainWindow.LastNodeValue).ToString()); // new item woop
+                }
+
+                item.SetValue("ItemID", line);
                 var insertRow = item.CreateRow(GridView);
                 GridView.Rows.Insert(i, insertRow);
             }
 
             // delete all extra rows after the last line
-            for (var i = GridView.RowCount - 1; i >= lines.Length; i--) {
-               var item = GridView.Rows[i].Tag as CashItem;
-                if (item != null) {
+            for (int i = GridView.RowCount - 1; i >= lines.Length; i--)
+            {
+                var item = GridView.Rows[i].Tag as CashItem;
+                if (item != null)
+                {
                     RemoveQueue.Add(item);
                 }
                 GridView.Rows.RemoveAt(i);
             }
+
             GridView.ResumeLayout();
         }
+
 
         public void Clear() {
             SuspendLayout();
