@@ -121,12 +121,17 @@ namespace CashCommodities.Controls {
                     // if the line is not empty, check if the row in the DataGridView is empty
                     line = Math.Max(0, line - 1);
                     var row = GridView.Rows[line];
-                    if (string.IsNullOrEmpty((string)row.Cells[2].Value)) {
-                        // if the row is empty, remove the row from the DataGridView
-                        remove = true;
+                    var itemIdCell = row.Cells[2].Value;
+                    switch (itemIdCell) {
+                        case null:
+                        case string str when string.IsNullOrEmpty(str.Trim()):
+                        case int i when i == 0:
+                            // if the row is empty, remove the row from the DataGridView
+                            remove = true;
+                            break;
                     }
                 }
-                if (remove) {
+                if (remove && line < GridView.RowCount) {
                     GridView.Rows.RemoveAt(line);
                 }
             }
@@ -137,17 +142,22 @@ namespace CashCommodities.Controls {
                 if (string.IsNullOrEmpty(text)) {
                     // if the line is empty, remove the row from the DataGridView
                     remove = true;
-                    line = Math.Min(line, GridView.RowCount - 1);
+                    line = Math.Min(line, Math.Max(0, GridView.RowCount - 1));
                 } else {
                     // if the line is not empty, check if the row in the DataGridView is empty
                     line = Math.Min(line + 1, TextBox.Lines.Length);
                     var row = GridView.Rows[line];
-                    if (string.IsNullOrEmpty((string)row.Cells[2].Value)) {
-                        // if the row is empty, remove the row from the DataGridView
-                        remove = true;
+                    var itemIdCell = row.Cells[2].Value;
+                    switch (itemIdCell) {
+                        case null:
+                        case string str when string.IsNullOrEmpty(str.Trim()):
+                        case int i when i == 0:
+                            // if the row is empty, remove the row from the DataGridView
+                            remove = true;
+                            break;
                     }
                 }
-                if (remove) {
+                if (remove && line < GridView.RowCount) {
                     GridView.Rows.RemoveAt(line);
                 }
             }
@@ -170,9 +180,6 @@ namespace CashCommodities.Controls {
             for (int i = 0; i < lines.Length; i++)
             {
                 string line = lines[i].Trim();
-                if (string.IsNullOrEmpty(line))
-                    continue;
-
                 CashItem item;
 
                 // synchronize existing rows wiith text in the TextBox
